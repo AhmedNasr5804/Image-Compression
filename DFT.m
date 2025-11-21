@@ -1,0 +1,18 @@
+function [out] = DFT(x)
+%DFT Summary of this function goes here
+%   the functions performs a simple   
+%   1D-DFT transformation for the
+%   input signal
+
+% Summation length
+N = length(x);
+
+% transformed matrix = zeros(1, N);
+out = zeros(1,N);
+
+% Perform the DFT calculation
+for m = 0:N-1
+    for n = 0:N-1
+        out(m+1) = out(m+1) + x(n+1) * exp(-2*pi*1i*m*n/N);
+    end
+end

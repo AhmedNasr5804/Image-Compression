@@ -1,0 +1,215 @@
+function b = DCT(a, n)
+%DCT Discrete cosine transform (Type-II).
+%
+%   Y = DCT(X) returns the discrete cosine transform of X. 
+%   The vector Y is the same size as X and contains the discrete
+%   cosine transform coefficients.
+%
+%   Y = DCT(X,N) pads or truncates the vector X to length N
+%   before transforming.
+%
+%   If X is a matrix, the DCT operation is applied to each column.
+
+% Convert to double if necessary
+if ~isa(a, 'double')
+    a = double(a);
+end
+
+% Handle row vector vs column vector
+if min(size(a)) == 1
+    if size(a, 2) > 1
+        do_trans = 1;
+        a = a(:);  % Convert to column vector
+    else
+        do_trans = 0;
+    end
+else
+    do_trans = 0;
+end
+
+% Get dimensions
+if nargin == 1
+    n = size(a, 1);
+end
+m = size(a, 2);
+
+% Pad or truncate a if necessary
+if size(a, 1) < n
+    aa = zeros(n, m);
+    aa(1:size(a,1), :) = a;
+else
+    aa = a(1:n, :);
+end
+
+% Initialize output
+b = zeros(n, m);
+
+% Direct DCT computation (Type-II formula)
+% DCT[k] = sqrt(2/N) * sum(x[n] * cos(pi*k*(2n+1)/(2N)))
+% with special case for k=0 using 1/sqrt(N)
+
+for col = 1:m
+    for k = 0:n-1
+        sum_val = 0;
+        for i = 0:n-1
+            sum_val = sum_val + aa(i+1, col) * cos(pi * k * (2*i + 1) / (2*n));
+        end
+        
+        % Apply normalization factor
+        if k == 0
+            alpha_k = 1 / sqrt(n);
+        else
+            alpha_k = sqrt(2 / n);
+        end
+        
+        b(k+1, col) = alpha_k * sum_val;
+    end
+end
+
+% Transpose back if input was a row vector
+if do_trans
+    b = b.';
+end
+
+end
+
+
+function b = DCT2(a)
+%DCT2 Two-dimensional discrete cosine transform.
+%
+%   B = DCT2(A) returns the two-dimensional discrete cosine 
+%   transform of A. The matrix B contains the discrete cosine
+%   transform coefficients B(k1,k2).
+%
+%   The DCT2 is computed by applying DCT to the columns of A,
+%   then applying DCT to the rows of the result.
+
+% Convert to double if necessary
+if ~isa(a, 'double')
+    a = double(a);
+end
+
+[n1, n2] = size(a);
+
+% Initialize intermediate and output matrices
+temp = zeros(n1, n2);
+b = zeros(n1, n2);
+
+% Step 1: Apply DCT to each column
+for col = 1:n2
+    temp(:, col) = DCT(a(:, col));
+end
+
+% Step 2: Apply DCT to each row of the result
+for row = 1:n1
+    b(row, :) = DCT(temp(row, :));
+end
+
+end
+
+
+function b = IDCT(a, n)
+%IDCT Inverse discrete cosine transform.
+%
+%   X = IDCT(Y) inverts the DCT transform, returning the
+%   original vector if Y was obtained using Y = DCT(X).
+%
+%   X = IDCT(Y,N) pads or truncates the vector Y to length N
+%   before transforming.
+%
+%   If Y is a matrix, the IDCT operation is applied to each column.
+
+% Convert to double if necessary
+if ~isa(a, 'double')
+    a = double(a);
+end
+
+% Handle row vector vs column vector
+if min(size(a)) == 1
+    if size(a, 2) > 1
+        do_trans = 1;
+        a = a(:);  % Convert to column vector
+    else
+        do_trans = 0;
+    end
+else
+    do_trans = 0;
+end
+
+% Get dimensions
+if nargin == 1
+    n = size(a, 1);
+end
+m = size(a, 2);
+
+% Pad or truncate a if necessary
+if size(a, 1) < n
+    aa = zeros(n, m);
+    aa(1:size(a,1), :) = a;
+else
+    aa = a(1:n, :);
+end
+
+% Initialize output
+b = zeros(n, m);
+
+% Direct IDCT computation (Type-III formula - inverse of Type-II)
+% IDCT[n] = sum(alpha[k] * X[k] * cos(pi*k*(2n+1)/(2N)))
+
+for col = 1:m
+    for i = 0:n-1
+        sum_val = 0;
+        for k = 0:n-1
+            % Apply normalization factor
+            if k == 0
+                alpha_k = 1 / sqrt(n);
+            else
+                alpha_k = sqrt(2 / n);
+            end
+            
+            sum_val = sum_val + alpha_k * aa(k+1, col) * cos(pi * k * (2*i + 1) / (2*n));
+        end
+        
+        b(i+1, col) = sum_val;
+    end
+end
+
+% Transpose back if input was a row vector
+if do_trans
+    b = b.';
+end
+
+end
+
+
+function b = IDCT2(a)
+%IDCT2 Two-dimensional inverse discrete cosine transform.
+%
+%   X = IDCT2(Y) inverts the two-dimensional DCT transform, 
+%   returning the original matrix if Y was obtained using Y = DCT2(X).
+%
+%   The IDCT2 is computed by applying IDCT to the columns of Y,
+%   then applying IDCT to the rows of the result.
+
+% Convert to double if necessary
+if ~isa(a, 'double')
+    a = double(a);
+end
+
+[n1, n2] = size(a);
+
+% Initialize intermediate and output matrices
+temp = zeros(n1, n2);
+b = zeros(n1, n2);
+
+% Step 1: Apply IDCT to each column
+for col = 1:n2
+    temp(:, col) = IDCT(a(:, col));
+end
+
+% Step 2: Apply IDCT to each row of the result
+for row = 1:n1
+    b(row, :) = IDCT(temp(row, :));
+end
+
+end
